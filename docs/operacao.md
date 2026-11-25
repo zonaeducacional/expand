@@ -22,6 +22,7 @@ Crie um snapshot consistente e copie-o para um local privado fora do servidor:
 ```sh
 docker compose exec -T expand node server/admin.js backup /tmp/expand-backup.sqlite
 docker compose cp expand:/tmp/expand-backup.sqlite ./expand-backup.sqlite
+chmod 600 ./expand-backup.sqlite
 ```
 
 O script em [ops/backup-dell.sh](../ops/backup-dell.sh) automatiza a cópia via SSH e verifica a integridade do snapshot. Por padrão usa o alias SSH `n4050` e o diretório `/opt/expand`. Você pode passar outro alias e diretório por meio de `EXPAND_SSH_HOST` e `EXPAND_REMOTE_DIR`.

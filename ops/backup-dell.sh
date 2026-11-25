@@ -24,7 +24,7 @@ import sqlite3
 import sys
 
 path = pathlib.Path(sys.argv[1]).resolve()
-with sqlite3.connect(path.as_uri() + "?mode=ro", uri=True) as snapshot:
+with sqlite3.connect(path.as_uri() + "?mode=ro&immutable=1", uri=True) as snapshot:
     assert snapshot.execute("PRAGMA integrity_check").fetchone() == ("ok",)
     snapshot.execute("SELECT count(*) FROM changes").fetchone()
 PY
