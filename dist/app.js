@@ -48,9 +48,9 @@ let relationships = [];
 let viewedMember;
 let profileTab = 'members';
 
-function identity(id) {
+function identity(id, handleOnly = false) {
   const user = data.users[id];
-  const label = [author(id), user?.handle].filter(Boolean).map(escape).join(' · ');
+  const label = handleOnly && user?.handle ? escape(user.handle) : [author(id), user?.handle].filter(Boolean).map(escape).join(' · ');
   return user ? `<button type="button" class="identity" data-action="view-member" data-id="${escape(id)}">${label}</button>` : label;
 }
 
@@ -286,7 +286,7 @@ function feed() {
       <div class="hero-copy">
         <p class="eyebrow">${escape(bubble.theme)}</p>
         <h2>${escape(bubble.prompt)}</h2>
-        <p class="by">${identity(bubble.authorId)}${echoTotal ? ` · ${echoTotal} ${echoTotal === 1 ? 'Eco' : 'Ecos'}` : ''}</p>
+        <p class="by">${identity(bubble.authorId, true)}${echoTotal ? ` · ${echoTotal} ${echoTotal === 1 ? 'Eco' : 'Ecos'}` : ''}</p>
         <div class="actions">
           <button class="primary" data-action="expand" data-id="${escape(bubble.id)}">Expandir</button>
           ${unreadFor(data, bubble.id).length ? `<span class="badge unread-badge">${echoCount(unreadFor(data, bubble.id).length)}</span>` : ''}
