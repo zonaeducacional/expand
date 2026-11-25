@@ -443,6 +443,10 @@ function render() {
   main.innerHTML = view === 'library' ? library() : view === 'profile' ? profile() : view === 'circle' ? circle() : view === 'admin' ? administration() : view === 'new-echoes' ? newEchoes() : view === 'settings' ? settings() : feed();
 }
 
+function canEditCover(state, bubble) {
+  return bubble && (bubble.authorId === state.currentUserId || bubble.authorId === membership()?.id);
+}
+
 function layerView() {
   const bubble = data.bubbles.find(item => item.id === selected);
   if (!bubble) return;
@@ -462,6 +466,12 @@ function layerView() {
       ${membership()?.circle && bubble.authorId === data.currentUserId && !bubble.shared && !data.outbox?.some(item => item.id === bubble.id)
         ? '<div class="actions toolbar"><button class="quiet" data-action="publish">Publicar texto no círculo</button></div>' : ''}
       ${circleStatus(bubble.id)}
+      ${!essay && canEditCover(data, bubble) ? `<details class="edit-cover">
+        <summary>Capa neste aparelho</summary>
+        <label for="bubble-local-cover">${bubble.image ? 'Trocar capa' : 'Adicionar capa'}</label>
+        <input id="bubble-local-cover" type="file" accept="image/jpeg,image/png,image/webp,image/avif">
+        <p class="muted" id="local-cover-status" role="status">A capa fica no acervo deste aparelho.</p>
+      </details>` : ''}
       ${!essay && bubble.shared && membership()
         ? `<button class="quiet" data-action="watch-conversation" aria-pressed="${followsConversation(data, bubble, membership().id)}">${followsConversation(data, bubble, membership().id) ? 'Parar de acompanhar' : 'Acompanhar conversa'}</button>` : ''}
       ${mediaMarkup(bubble.audio)}${mediaMarkup(bubble.video)}
@@ -767,6 +777,32 @@ document.addEventListener('input', async event => {
 
 document.addEventListener('change', async event => {
   const field = event.target;
+  if (field.id === 'bubble-local-cover' && field.files[0]) {
+    const id = selected;
+    const output = layer.querySelector('#local-cover-status');
+    field.disabled = true;
+    activeOperations += 1;
+    try {
+      const image = await prepareCover(field.files[0]);
+      await persist(state => {
+        const bubble = state.bubbles.find(item => item.id === id);
+        if (!canEditCover(state, bubble)) throw new Error('A capa desta bolha só pode ser editada por quem a publicou.');
+        bubble.image = image;
+      });
+      if (view === 'feed') render();
+      if (output) output.textContent = 'Capa salva neste aparelho.';
+      const label = layer.querySelector('label[for="bubble-local-cover"]');
+      if (selected === id && label) label.textContent = 'Trocar capa';
+    } catch (error) {
+      if (output) output.textContent = error.message;
+      report(error);
+    } finally {
+      field.value = '';
+      field.disabled = false;
+      activeOperations -= 1;
+    }
+    return;
+  }
   if (['settings-theme', 'settings-motion', 'settings-notices-toggle'].includes(field.id)) {
     if (field.id === 'settings-theme') document.dispatchEvent(new CustomEvent('expand:theme', { detail: field.value }));
     else if (field.id === 'settings-motion') document.dispatchEvent(new CustomEvent('expand:motion', { detail: field.checked ? 'reduce' : 'system' }));

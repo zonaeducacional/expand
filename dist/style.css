@@ -192,3 +192,7 @@ dialog{width:min(720px,calc(100% - 28px));max-height:calc(100dvh - 48px);backgro
 @media(max-width:690px){.source-notice{padding-bottom:calc(86px + env(safe-area-inset-bottom))}}
 
 .update-notice{width:min(92%,760px);margin:4px auto 12px;padding:10px 16px;border:1px solid var(--line);border-radius:14px;background:var(--white);color:var(--ink)}
+
+.edit-cover{margin-block:16px}
+.edit-cover summary{cursor:pointer;font-weight:700}
+.edit-cover label{margin-block:12px 6px}
