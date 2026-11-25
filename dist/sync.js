@@ -1,0 +1,146 @@
+import { update } from './db.js';
+import { recordUnread } from './conversations.js?v=14';
+
+const key = 'expand-circle-session';
+let session;
+try { session = JSON.parse(localStorage.getItem(key)); } catch {}
+let running;
+export const membership = () => session;
+
+async function request(path, { method = 'GET', body, token } = {}) {
+  let response;
+  try {
+    response = await fetch('./api/' + path, {
+      method, cache: 'no-store', signal: AbortSignal.timeout(8000),
+      headers: { ...(body ? { 'content-type': 'application/json' } : {}), ...(token ? { authorization: 'Bearer ' + token } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch { throw new Error('Servidor do círculo indisponível.'); }
+  const json = await response.json().catch(() => null);
+  if (!response.ok || !json) {
+    throw Object.assign(new Error(json?.error ?? 'Servidor do círculo indisponível.'), { status: response.status });
+  }
+  return json;
+}
+
+export async function join(values) {
+  const result = await request('join', { method: 'POST', body: values });
+  localStorage.setItem(key, JSON.stringify(result));
+  session = result;
+  return result;
+}
+
+export async function refreshMembership() {
+  if (!session || !navigator.onLine) return;
+  const result = await request('session', { token: session.token });
+  session = { ...session, ...result };
+  localStorage.setItem(key, JSON.stringify(session));
+}
+
+export function adminOverview() {
+  return request('admin/', { token: session.token });
+}
+
+export async function createCircle(values) {
+  const result = await request('admin/circle', { method: 'POST', body: values, token: session.token });
+  session = { ...session, circle: result.circle };
+  localStorage.setItem(key, JSON.stringify(session));
+  return result.circle;
+}
+
+export function issueInvite(label) {
+  return request('admin/invites', { method: 'POST', body: { label }, token: session.token });
+}
+
+export function revokeInvite(id) {
+  return request('admin/invites/' + encodeURIComponent(id), { method: 'DELETE', token: session.token });
+}
+
+export function memberDirectory() {
+  return request('members', { token: session.token });
+}
+
+export function setFollowing(id, following) {
+  return request('follows/' + encodeURIComponent(id), { method: 'PUT', token: session.token, body: { following } });
+}
+
+export async function saveCircleProfile(profile) {
+  const result = await request('profile', { method: 'PUT', token: session.token, body: profile });
+  session = { ...session, ...result };
+  localStorage.setItem(key, JSON.stringify(session));
+}
+
+export function enqueue(state, operation) {
+  state.outbox ??= [];
+  state.outbox.push(operation);
+}
+
+function apply(state, change, memberId) {
+  const { id, kind, parent, content, authorId, name, handle } = change;
+  state.users[authorId] = { id: authorId, name, handle };
+  if (kind === 'bubble') {
+    const bubble = state.bubbles.find(item => item.id === id);
+    if (bubble) bubble.shared = true;
+    else state.bubbles.unshift({ ...content, id, authorId, shared: true, image: '', echoes: [], sources: [] });
+  } else {
+    const bubble = state.bubbles.find(item => item.id === parent);
+    if (!bubble) return;
+    const echo = bubble.echoes.find(item => item.id === id);
+    if (echo) echo.shared = true;
+    else {
+      recordUnread(state, bubble, change, memberId);
+      bubble.echoes.push({ ...content, id, authorId, shared: true });
+    }
+  }
+}
+
+async function run() {
+  const token = session.token;
+  let state = await update();
+  let changed = false;
+  for (const operation of state.outbox ?? []) {
+    if (operation.error) continue;
+    try {
+      await request('sync', { method: 'POST', token, body: operation });
+      await update(data => {
+        const bubble = data.bubbles.find(item => item.id === (operation.parent ?? operation.id));
+        const published = operation.kind === 'echo' ? bubble?.echoes.find(item => item.id === operation.id) : bubble;
+        if (published) published.shared = true;
+        data.outbox = (data.outbox ?? []).filter(item => item.id !== operation.id);
+        return data;
+      });
+    } catch (error) {
+      if (![409, 422].includes(error.status)) throw error;
+      await update(data => {
+        const queued = data.outbox?.find(item => item.id === operation.id);
+        if (queued) queued.error = error.message;
+        return data;
+      });
+    }
+    changed = true;
+  }
+  let cursor = state.circleCursor ?? 0;
+  let more;
+  do {
+    const result = await request('sync?cursor=' + cursor, { token });
+    if (result.items.length) {
+      state = await update(data => {
+        for (const change of result.items) {
+          if (change.seq > (data.circleCursor ?? 0)) apply(data, change, session.id);
+        }
+        data.circleCursor = Math.max(data.circleCursor ?? 0, result.cursor);
+        return data;
+      });
+      changed = true;
+    }
+    cursor = result.cursor;
+    more = result.more;
+  } while (more);
+  return changed;
+}
+
+export function synchronize() {
+  if (!session || !navigator.onLine) return Promise.resolve(false);
+  if (!running) running = run().finally(() => { running = null; });
+  return running;
+}

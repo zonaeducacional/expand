@@ -1,0 +1,9 @@
+**
+!Dockerfile
+!server/
+!server/*.js
+!server/package*.json
+!dist/
+!dist/**
+
+dist/assets/photo-*.jpg

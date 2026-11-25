@@ -1,0 +1,11 @@
+services:
+  expand:
+    build: .
+    image: expand-local:stage2
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3060:3060"
+    volumes:
+      - expand_data:/data
+volumes:
+  expand_data:

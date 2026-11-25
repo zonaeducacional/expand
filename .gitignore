@@ -1,0 +1,12 @@
+node_modules/
+data/
+.env
+.env.*
+!.env.example
+*.sqlite*
+*.db
+*.zip
+*.pem
+*.key
+*convite*admin*.txt
+exportar-prototipo.html
