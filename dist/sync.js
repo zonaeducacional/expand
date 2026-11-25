@@ -2,6 +2,7 @@ import { update } from './db.js';
 import { recordUnread } from './conversations.js?v=14';
 
 const key = 'expand-circle-session';
+const ownerKey = 'expand-circle-owner';
 let session;
 try { session = JSON.parse(localStorage.getItem(key)); } catch {}
 let running;
@@ -23,16 +24,41 @@ async function request(path, { method = 'GET', body, token } = {}) {
   return json;
 }
 
+function rememberAccount(result) {
+  const owner = localStorage.getItem(ownerKey) ?? session?.id;
+  if (owner && result.id !== owner) {
+    throw new Error('Este acervo está vinculado a outra conta. Use outro perfil de navegador.');
+  }
+  const { accessCode, ...account } = result;
+  localStorage.setItem(ownerKey, account.id);
+  localStorage.setItem(key, JSON.stringify(account));
+  session = account;
+  return { ...account, accessCode };
+}
+
 export async function join(values) {
-  const result = await request('join', { method: 'POST', body: values });
-  localStorage.setItem(key, JSON.stringify(result));
-  session = result;
-  return result;
+  if (session || localStorage.getItem(ownerKey)) {
+    throw new Error('Este acervo já está vinculado a uma conta. Use outro perfil de navegador para criar uma conta diferente.');
+  }
+  return rememberAccount(await request('join', { method: 'POST', body: { ...values, issueAccessCode: true } }));
+}
+
+export async function login(values) {
+  return rememberAccount(await request('login', { method: 'POST', body: values }));
+}
+
+export async function generateAccessCode(replace) {
+  const result = await request('access-code', { method: 'POST', body: { replace }, token: session.token });
+  session = { ...session, hasAccessCode: true };
+  localStorage.setItem(key, JSON.stringify(session));
+  return result.accessCode;
 }
 
 export async function refreshMembership() {
   if (!session || !navigator.onLine) return;
-  const result = await request('session', { token: session.token });
+  const current = session;
+  const result = await request('session', { token: current.token });
+  if (session !== current) return;
   session = { ...session, ...result };
   localStorage.setItem(key, JSON.stringify(session));
 }

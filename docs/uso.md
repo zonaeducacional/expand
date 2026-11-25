@@ -2,7 +2,7 @@
 
 ## Entrar no círculo e instalar
 
-Abra o endereço do Expand e toque em **Círculo Expand**. Cole o convite e escolha seu nome e sua arroba. Cada código permite uma entrada e expira em 24 horas. No iPhone, procure **Adicionar à Tela de Início** no menu Compartilhar do Safari. No Android ou no computador, procure **Instalar app** no navegador.
+Abra o endereço do Expand e toque em **Tenho um convite**. Cole o convite, escolha seu nome e sua arroba e guarde o código de acesso exibido após criar a conta. Cada código permite uma entrada e expira em 24 horas. No iPhone, procure **Adicionar à Tela de Início** no menu Compartilhar do Safari. No Android ou no computador, procure **Instalar app** no navegador.
 
 ## Bolha, Círculo, Eco e Expansão
 
@@ -26,7 +26,7 @@ Use **Criar** para escrever e salvar no aparelho. Para enviar o texto ao círcul
 
 Em **Perfil**, edite nome, arroba, bio e foto. Membros veem o nome, a arroba, a bio e as relações de seguir. A foto é local. Em **Configurações**, ajuste tema, movimento e avisos, confira os envios e acesse o guia do app.
 
-Na **Biblioteca** ou em **Configurações**, exporte seu acervo antes de limpar dados do navegador ou trocar de dispositivo. A restauração substitui o acervo local após confirmação. O ZIP guarda os dados do acervo. A sessão do círculo fica no navegador em que o convite foi usado e o ZIP não a recupera.
+Na **Biblioteca** ou em **Configurações**, exporte seu acervo antes de limpar dados do navegador ou trocar de dispositivo. A restauração substitui o acervo local após confirmação. O ZIP guarda os dados do acervo. A sessão do círculo não faz parte do ZIP. Em outro aparelho, toque em **Já tenho conta** e use a arroba e o código de acesso para recuperar a mesma conta.
 
 ## Receber atualizações
 
@@ -35,3 +35,9 @@ Com o Expand aberto e online, novas versões são baixadas automaticamente. Se v
 ## Comunidade, privacidade e licença
 
 Em **Configurações → Comunidade, privacidade e licença**, consulte as diretrizes do círculo, os termos desta instância, a política de privacidade e os links para o código aberto. Para questões sobre comportamento ou dados pessoais, procure a administração em particular pelo canal do convite.
+
+## Acesso e navegação
+
+Se a conta já estava ativa antes deste recurso, acesse **Configurações → Perfil e círculo → Gerar código de acesso** no aparelho conectado. Guarde o código como uma senha, de preferência em um gerenciador de senhas. Gerar outro código invalida o anterior e as sessões dos outros aparelhos. Caso você perca o código e todas as sessões, a versão atual não oferece recuperação automática.
+
+No celular, a barra inferior dá acesso a **Círculos**, **Biblioteca**, **Criar**, **Novos Ecos** e **Perfil**. É possível entrar no acervo local sem criar uma conta.

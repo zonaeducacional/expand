@@ -12,6 +12,11 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS invites (hash TEXT PRIMARY KEY, expires INTEGER NOT NULL);
   CREATE TABLE IF NOT EXISTS members
     (id TEXT PRIMARY KEY, token TEXT UNIQUE NOT NULL, name TEXT NOT NULL, handle TEXT UNIQUE NOT NULL);
+  CREATE TABLE IF NOT EXISTS access_keys
+    (member TEXT PRIMARY KEY REFERENCES members(id), hash TEXT UNIQUE NOT NULL);
+  CREATE TABLE IF NOT EXISTS device_sessions
+    (token TEXT PRIMARY KEY, member TEXT NOT NULL REFERENCES members(id));
+  CREATE INDEX IF NOT EXISTS device_sessions_member ON device_sessions(member);
   CREATE TABLE IF NOT EXISTS circle (
     id INTEGER PRIMARY KEY CHECK(id=1), name TEXT NOT NULL, description TEXT NOT NULL,
     created INTEGER NOT NULL

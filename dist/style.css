@@ -199,3 +199,28 @@ dialog{width:min(720px,calc(100% - 28px));max-height:calc(100dvh - 48px);backgro
 
 .settings-page details li{line-height:1.55;margin-block:6px}
 .settings-page details a{color:var(--plum);text-underline-offset:.15em}
+
+.welcome{padding:clamp(24px,7vw,76px) 0}
+.welcome>p:not(.eyebrow){max-width:42ch;font-size:1.15rem;line-height:1.6}
+.welcome .actions{margin-top:22px}
+.top nav button{position:relative;display:flex;align-items:center;justify-content:center;gap:6px}
+.nav-icon{display:inline-block;width:18px;height:18px;position:relative;flex:none;color:currentColor}
+.icon-circles{border:1.5px solid;border-radius:50%}
+.icon-circles::before,.icon-circles::after{content:"";position:absolute;inset:3px;border:1px solid;border-radius:50%}
+.icon-circles::after{inset:6px;background:currentColor}
+.icon-library{border:1.5px solid;border-radius:3px;width:14px}
+.icon-library::after{content:"";position:absolute;top:5px;left:3px;width:6px;height:3px;border-top:1px solid;border-bottom:1px solid}
+.icon-create{display:grid;place-items:center;width:27px;height:24px;border-radius:8px;background:var(--plum);color:var(--paper);font-size:23px;line-height:1}
+.icon-echoes{height:15px;border:1.5px solid;border-radius:5px}
+.icon-echoes::after{content:"";position:absolute;bottom:-4px;left:3px;width:5px;height:5px;border-left:1.5px solid;transform:skewY(-35deg)}
+.icon-profile::before{content:"";position:absolute;top:0;left:5px;width:8px;height:8px;border:1.5px solid;border-radius:50%}
+.icon-profile::after{content:"";position:absolute;bottom:0;left:1px;width:16px;height:7px;border:1.5px solid;border-radius:9px 9px 3px 3px}
+#nav-echo-count{position:absolute;top:0;right:0;min-width:18px;height:18px;font-size:.7rem}
+@media(max-width:1000px){
+  .top nav{position:fixed;z-index:3;bottom:0;left:0;right:0;justify-content:center;gap:3px;background:#f7f3eaf5;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  [data-theme="dark"] .top nav{background:#1c1720f5}
+  .top nav button{flex:1;min-width:0;max-width:128px;min-height:49px;flex-direction:column;gap:5px;padding:5px 2px;font-size:.69rem;line-height:1.1}
+  .top nav .create-tab{border:0}
+  .source-notice{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  #status{bottom:78px}
+}

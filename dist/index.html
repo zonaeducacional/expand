@@ -10,21 +10,22 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./assets/icon-192.png">
 <link rel="apple-touch-icon" href="./assets/icon-192.png">
-<link rel="stylesheet" href="./style.css?v=22">
+<link rel="stylesheet" href="./style.css?v=23">
 <script src="./theme.js?v=14"></script>
-<script type="module" src="./app.js?v=22"></script>
+<script type="module" src="./app.js?v=23"></script>
 </head>
 <body>
 <header class="top">
   <button class="brand" data-view="feed" aria-label="Expand, início"><span class="mark" aria-hidden="true"></span>expand<span class="dot">.</span></button>
   <nav aria-label="Navegação principal">
-    <button data-view="feed">Círculos</button>
-    <button data-view="library">Biblioteca</button>
-    <button data-view="create" class="create-tab">＋ Criar</button>
+    <button data-view="feed"><span class="nav-icon icon-circles" aria-hidden="true"></span>Círculos</button>
+    <button data-view="library"><span class="nav-icon icon-library" aria-hidden="true"></span>Biblioteca</button>
+    <button data-view="create" class="create-tab"><span class="nav-icon icon-create" aria-hidden="true">+</span>Criar</button>
+    <button data-view="new-echoes" id="nav-echoes" hidden><span class="nav-icon icon-echoes" aria-hidden="true"></span>Novos Ecos<span id="nav-echo-count" class="echo-count" hidden></span></button>
+    <button data-view="profile"><span class="nav-icon icon-profile" aria-hidden="true"></span>Perfil</button>
   </nav>
   <div class="top-tools">
     <button id="theme" class="quiet" type="button" aria-label="Ativar tema escuro" title="Ativar tema escuro"><span aria-hidden="true">☾</span></button>
-    <button class="quiet" id="profile" data-view="profile">Perfil</button>
     <button class="quiet" id="settings" type="button" data-view="settings" aria-label="Configurações" title="Configurações"><span aria-hidden="true">⚙</span></button>
   </div>
   <button id="install" class="quiet" hidden>Instalar</button>

@@ -10,7 +10,9 @@ const statements = {
   handle: db.prepare('SELECT 1 FROM members WHERE handle=?'),
   join: db.prepare('INSERT INTO members VALUES (?, ?, ?, ?)'),
   member: db.prepare(`SELECT id,name,handle,EXISTS
-    (SELECT 1 FROM administrators WHERE member=members.id) AS admin FROM members WHERE token=?`),
+    (SELECT 1 FROM administrators WHERE member=members.id) AS admin FROM members
+    WHERE id=coalesce((SELECT member FROM device_sessions WHERE token=?),
+      (SELECT id FROM members WHERE token=?))`),
   change: db.prepare('SELECT id,member,kind,parent,content FROM changes WHERE id=?'),
   insert: db.prepare('INSERT INTO changes(id,kind,parent,member,content) VALUES (?,?,?,?,?)'),
   pull: db.prepare(`SELECT c.seq,c.id,c.kind,c.parent,c.content,m.id AS authorId,m.name,m.handle
@@ -23,10 +25,24 @@ const list = (value, count, max) => Array.isArray(value) && value.length <= coun
 const replyError = (reply, code, error) => reply.code(code).send({ error });
 
 const circle = db.prepare('SELECT name,description,created FROM circle WHERE id=1');
+const setAccessKey = db.prepare(`INSERT INTO access_keys VALUES (?,?)
+  ON CONFLICT(member) DO UPDATE SET hash=excluded.hash`);
+const accessAccount = db.prepare(`SELECT m.id,m.name,m.handle,coalesce(b.bio,'') AS bio,
+    EXISTS(SELECT 1 FROM administrators WHERE member=m.id) AS admin
+  FROM access_keys k JOIN members m ON k.member=m.id
+  LEFT JOIN member_bios b ON b.member=m.id WHERE k.hash=? AND m.handle=?`);
+const addDevice = db.prepare('INSERT INTO device_sessions VALUES (?,?)');
+const accessExists = db.prepare('SELECT 1 FROM access_keys WHERE member=?');
+
+function startAccess(memberId) {
+  const code = secret();
+  setAccessKey.run(memberId, hash(code));
+  return code;
+}
 
 app.get('/api/health', async () => ({ ok: true }));
 app.post('/api/join', async (request, reply) => {
-  const { invite, name, handle } = request.body ?? {};
+  const { invite, name, handle, issueAccessCode } = request.body ?? {};
   if (typeof invite !== 'string' || !tokenPattern.test(invite) || !validText(name, 70) ||
       typeof handle !== 'string' || !/^@[a-z0-9_.]{1,31}$/.test(handle)) {
     return replyError(reply, 400, 'Confira o código, o nome e a arroba.');
@@ -39,23 +55,51 @@ app.post('/api/join', async (request, reply) => {
     const token = secret();
     const id = memberId();
     statements.join.run(id, hash(token), name.trim(), handle);
+    const accessCode = issueAccessCode === true ? startAccess(id) : undefined;
     if (issued?.admin) db.prepare('INSERT INTO administrators VALUES (?)').run(id);
     db.prepare('UPDATE invite_history SET used=? WHERE hash=?').run(now(), hash(invite));
-    return reply.header('Cache-Control', 'no-store').code(201).send({ token, id, name: name.trim(), handle, admin: Boolean(issued?.admin), circle: circle.get() ?? null });
+    return reply.header('Cache-Control', 'no-store').code(201).send({ token, id, name: name.trim(), handle, admin: Boolean(issued?.admin), circle: circle.get() ?? null, accessCode, hasAccessCode: Boolean(accessCode) });
   });
 });
 
 function member(request) {
   const token = request.headers.authorization?.slice(7);
   if (!request.headers.authorization?.startsWith('Bearer ') || !tokenPattern.test(token ?? '')) return;
-  return statements.member.get(hash(token));
+  const digest = hash(token);
+  return statements.member.get(digest, digest);
 }
+
+app.post('/api/login', async (request, reply) => {
+  reply.header('Cache-Control', 'no-store');
+  const { handle, accessCode } = request.body ?? {};
+  const account = typeof handle === 'string' && typeof accessCode === 'string' && tokenPattern.test(accessCode)
+    ? accessAccount.get(hash(accessCode), handle) : null;
+  if (!account) return replyError(reply, 401, 'Confira a arroba e o código de acesso.');
+  const token = secret();
+  addDevice.run(hash(token), account.id);
+  return { ...account, admin: Boolean(account.admin), circle: circle.get() ?? null, token, hasAccessCode: true };
+});
+
+app.post('/api/access-code', async (request, reply) => {
+  reply.header('Cache-Control', 'no-store');
+  const viewer = member(request);
+  if (!viewer) return replyError(reply, 401, 'Entre no círculo para continuar.');
+  const currentToken = hash(request.headers.authorization.slice(7));
+  return transaction(() => {
+    if (accessExists.get(viewer.id) && request.body?.replace !== true) {
+      return replyError(reply, 409, 'Já existe um código. Reabra Configurações para confirmar a substituição.');
+    }
+    db.prepare('DELETE FROM device_sessions WHERE member=? AND token<>?').run(viewer.id, currentToken);
+    db.prepare('UPDATE members SET token=? WHERE id=? AND token<>?').run(hash(secret()), viewer.id, currentToken);
+    return { accessCode: startAccess(viewer.id) };
+  });
+});
 
 app.get('/api/session', async (request, reply) => {
   reply.header('Cache-Control', 'no-store');
   const viewer = member(request);
   if (!viewer) return replyError(reply, 401, 'Entre no círculo para continuar.');
-  return { ...viewer, admin: Boolean(viewer.admin), circle: circle.get() ?? null };
+  return { ...viewer, admin: Boolean(viewer.admin), circle: circle.get() ?? null, hasAccessCode: Boolean(accessExists.get(viewer.id)) };
 });
 
 const overview = db.prepare(`SELECT

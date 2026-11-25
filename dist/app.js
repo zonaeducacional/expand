@@ -1,7 +1,7 @@
 import { policies } from './policies.js';
 import { update } from './db.js';
 import { exportArchive, importArchive } from './backup.js?v=14';
-import { adminOverview, createCircle, enqueue, issueInvite, join, memberDirectory, membership, refreshMembership, revokeInvite, saveCircleProfile, setFollowing, synchronize } from './sync.js?v=18';
+import { adminOverview, createCircle, enqueue, generateAccessCode, issueInvite, join, login, memberDirectory, membership, refreshMembership, revokeInvite, saveCircleProfile, setFollowing, synchronize } from './sync.js?v=23';
 import { checkForUpdates, startUpdates } from './updates.js';
 import { followsConversation, unreadFor } from './conversations.js?v=14';
 
@@ -18,6 +18,7 @@ const lenses = ['Vivência', 'Outro ponto de vista', 'Referência', 'Pergunta', 
 const tags = items => items.length ? `<ul class="tags">${items.map(item => `<li>${escape(item)}</li>`).join('')}</ul>` : '';
 let data;
 let view = 'feed';
+let visibleAccessCode;
 let index = 0;
 let selected;
 let screen;
@@ -83,7 +84,7 @@ function profile() {
       ${list.some(item => item.id === person.id) ? followButton(person) : ''}</div></div></section>`;
   }
   const selectedList = profileTab === 'followers' ? followers : profileTab === 'following' ? following : list;
-  return `<section class="page"><h1>Meu perfil</h1>
+  return `<section class="page"><header class="section-head"><h1>Meu perfil</h1><button class="quiet" data-view="settings">Configurações</button></header>
     <div class="panel profile-summary">
       <div id="profile-avatar">${avatar(user, true)}</div><div><strong>${escape(user.name)}</strong>
       <p class="muted">${escape(user.handle)}</p><p>${escape(user.bio ?? '')}</p></div>
@@ -200,6 +201,39 @@ async function loadAdministration() {
   if (view === 'admin') render();
 }
 
+function welcome() {
+  return `<section class="page welcome"><p class="eyebrow">Expand</p>
+    <h1>Conversas que crescem</h1>
+    <p>Entre em um círculo para compartilhar bolhas, escrever Ecos e acompanhar as conversas no seu ritmo.</p>
+    <div class="actions">
+      <button class="primary" data-view="circle">Tenho um convite</button>
+      <button class="quiet" data-view="login">Já tenho conta</button>
+      <button class="quiet" data-view="library">Abrir acervo neste aparelho</button>
+    </div>
+  </section>`;
+}
+
+function loginView() {
+  return `<section class="page"><h1>Entrar no Expand</h1>
+    <form id="login-form" class="panel fields">
+      <label>Arroba<input name="handle" required maxlength="32" autocomplete="username" value="${escape(membership()?.handle ?? '')}"></label>
+      <label>Código de acesso<input name="accessCode" required type="password" maxlength="43" autocomplete="current-password" spellcheck="false" autocapitalize="none"></label>
+      <p class="muted">Use o código que você guardou ao criar a conta ou gerou nas Configurações do aparelho onde já está conectado.</p>
+      <div class="actions"><button class="primary" type="submit">Entrar</button>
+        <button class="quiet" type="button" data-view="${membership() ? 'settings' : 'welcome'}">Voltar</button></div>
+    </form></section>`;
+}
+
+function accessView() {
+  return `<section class="page"><h1>Código de acesso</h1><div class="panel fields">
+    <p>Guarde este código em local seguro. Ele funciona como uma senha e permite entrar na conta <strong>${escape(membership()?.handle)}</strong> em outro aparelho.</p>
+    <label for="account-access-code">Seu código de acesso</label>
+    <input id="account-access-code" value="${escape(visibleAccessCode)}" readonly>
+    <div class="actions"><button class="quiet" data-action="copy-access">Copiar código</button>
+      <button class="primary" data-view="feed">Ir para Círculos</button></div>
+  </div></section>`;
+}
+
 function circle() {
   const member = membership();
   if (member) return `<section class="page"><h1>${escape(member.circle?.name ?? 'Círculo Expand')}</h1><div class="panel">
@@ -211,13 +245,13 @@ function circle() {
     ${member.admin ? '<button class="quiet" data-view="admin">Administração</button>' : ''}</div>
   </div></section>`;
   const user = data.users[data.currentUserId];
-  return `<section class="page"><h1>Entrar no círculo</h1><form id="circle-form" class="panel">
+  return `<section class="page"><h1>Criar conta por convite</h1><form id="circle-form" class="panel">
     <div class="fields">
       <label>Código de convite<input name="invite" required maxlength="43" autocomplete="off" spellcheck="false"></label>
       <label>Nome<input name="name" required maxlength="70" value="${escape(user.name)}"></label>
       <label>Arroba<input name="handle" required maxlength="32" value="${escape(user.handle)}"></label>
     </div>
-    <div class="actions form-foot"><button class="primary" type="submit">Entrar</button></div>
+    <div class="actions form-foot"><button class="primary" type="submit">Criar conta</button><button class="quiet" type="button" data-view="login">Já tenho conta</button></div>
   </form></section>`;
 }
 
@@ -235,7 +269,7 @@ async function refreshCircle(showStatus = false) {
         const top = dialog.scrollTop;
         layerView();
         dialog.scrollTop = top;
-      } else if (!dialog.open && !creator.open && view !== 'profile' && view !== 'admin' && view !== 'settings') render();
+      } else if (!dialog.open && !creator.open && view !== 'profile' && view !== 'admin' && view !== 'settings' && view !== 'login' && view !== 'access' && view !== 'circle') render();
       if (view === 'settings') {
         const queue = document.querySelector('#settings-queue');
         const pending = (data.outbox ?? []).filter(item => !item.error).length;
@@ -244,7 +278,10 @@ async function refreshCircle(showStatus = false) {
       }
     }
     if (showStatus) notify(navigator.onLine ? 'Sincronização concluída.' : 'Sem conexão. Os envios ficam no aparelho.');
-  } catch (error) { setSyncSummary(error.message); if (showStatus) report(error); }
+  } catch (error) {
+    setSyncSummary(error.status === 401 ? 'A sessão expirou ou foi encerrada. Use Entrar novamente.' : error.message);
+    if (showStatus) report(error);
+  }
 }
 
 const echoCount = count => count === 1 ? '1 novo Eco' : `${count} novos Ecos`;
@@ -261,15 +298,10 @@ function newEchoes() {
     </div></section>`;
 }
 
-function newEchoesButton() {
-  const total = data.bubbles.reduce((sum, bubble) => sum + unreadFor(data, bubble.id).length, 0);
-  return `<button class="quiet new-echoes" data-view="new-echoes">Novos Ecos${total ? ` <span class="echo-count">${total}</span>` : ''}</button>`;
-}
-
 function feed() {
   const bubble = data.bubbles[index];
   const heading = `<header class="section-head"><div><p class="eyebrow">Círculos</p><h1>Bolhas em foco</h1></div><div class="actions">
-    ${membership() ? newEchoesButton() : ''}<button class="quiet" data-view="circle">Círculo Expand</button>
+    <button class="quiet" data-view="circle">Círculo Expand</button>
   </div></header>`;
   if (!bubble) return heading + `<section class="panel empty">
     <h2>Nenhuma bolha por aqui</h2><p>Crie uma bolha para começar seu acervo.</p>
@@ -323,7 +355,10 @@ function settings() {
       <p>${member ? `Você entrou como <strong>${escape(member.handle)}</strong>${member.circle ? ` em <strong>${escape(member.circle.name)}</strong>` : ''}.`
         : 'Seu acervo já funciona neste aparelho. Para participar de um círculo, entre com um convite.'}</p>
       <div class="actions"><button class="quiet" data-view="profile">Editar perfil</button>
-        <button class="quiet" data-view="circle">${member ? 'Abrir círculo' : 'Entrar com convite'}</button></div>
+        <button class="quiet" data-view="circle">${member ? 'Abrir círculo' : 'Criar conta por convite'}</button>
+        <button class="quiet" data-view="login">${member ? 'Entrar novamente' : 'Entrar na minha conta'}</button></div>
+      ${member ? `<p class="muted">Guarde seu código de acesso para entrar com a mesma conta em outro aparelho.</p>
+        <button class="quiet" data-action="generate-access">${member.hasAccessCode ? 'Gerar novo código de acesso' : 'Gerar código de acesso'}</button>` : ''}
     </section>
     <section class="panel" aria-labelledby="settings-look">
       <h2 id="settings-look">Aparência e acessibilidade</h2>
@@ -377,7 +412,7 @@ function settings() {
       ${installAvailable ? '<button class="quiet" data-action="install-app">Instalar Expand</button>' : ''}</details>
       <details><summary>Escrever offline e publicar</summary><p>Use Criar para salvar uma bolha no aparelho. Depois abra Expandir e escolha Publicar texto no círculo. Se estiver offline, o texto fica na fila. Na próxima conexão, mantenha o app aberto até o envio ser confirmado.</p></details>
       <details><summary>Quem vê cada coisa</summary><p>Rascunhos, leituras salvas e as mídias que você adiciona ficam no aparelho. O Dell guarda os textos publicados, o perfil compartilhado, relações de seguir e permissões do círculo. Imagens, avatares, áudios e vídeos ainda ficam disponíveis apenas no aparelho em que foram adicionados. O Expand funciona sem GPS.</p></details>
-      <details><summary>Trocar de aparelho ou recuperar dados</summary><p>Exporte o ZIP antes de trocar de aparelho ou limpar os dados do site. Na outra instalação, use Restaurar acervo. O ZIP leva o acervo pessoal. Para recuperar o acesso ao círculo em outro navegador, fale com o administrador. Nesta versão, a sessão permanece no aparelho que usou o convite.</p></details>
+      <details><summary>Trocar de aparelho ou recuperar dados</summary><p>Exporte o ZIP antes de trocar de aparelho ou limpar os dados do site. Na outra instalação, use Restaurar acervo. O ZIP leva o acervo pessoal. Para voltar ao mesmo perfil e círculo, use sua arroba e o código de acesso. Crie ou renove o código nas Configurações enquanto ainda tiver uma sessão válida.</p></details>
     </section>
     ${policies}
   </section>`;
@@ -442,7 +477,14 @@ function render() {
     if (button.dataset.view === view) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   }
-  main.innerHTML = view === 'library' ? library() : view === 'profile' ? profile() : view === 'circle' ? circle() : view === 'admin' ? administration() : view === 'new-echoes' ? newEchoes() : view === 'settings' ? settings() : feed();
+  const unread = data.bubbles.reduce((sum, bubble) => sum + unreadFor(data, bubble.id).length, 0);
+  const echoNav = document.querySelector('#nav-echoes');
+  const echoBadge = document.querySelector('#nav-echo-count');
+  echoNav.hidden = !membership();
+  echoBadge.hidden = !unread;
+  echoBadge.textContent = unread;
+  echoNav.setAttribute('aria-label', unread ? `Novos Ecos, ${unread}` : 'Novos Ecos');
+  main.innerHTML = view === 'welcome' ? welcome() : view === 'login' ? loginView() : view === 'access' ? accessView() : view === 'library' ? library() : view === 'profile' ? profile() : view === 'circle' ? circle() : view === 'admin' ? administration() : view === 'new-echoes' ? newEchoes() : view === 'settings' ? settings() : feed();
 }
 
 function canEditCover(state, bubble) {
@@ -565,6 +607,25 @@ async function prepareMedia(file, kind) {
 let pendingFiles = 0;
 const actions = {
   'install-app'() { install.click(); },
+  async 'generate-access'() {
+    const replacing = Boolean(membership()?.hasAccessCode);
+    if (replacing &&
+        !window.confirm('Gerar um novo código invalida o anterior e encerra as sessões da conta nos outros aparelhos. Continuar?')) return;
+    visibleAccessCode = await generateAccessCode(replacing);
+    view = 'access';
+    render();
+    window.scrollTo(0, 0);
+  },
+  async 'copy-access'() {
+    if (!visibleAccessCode) return;
+    try {
+      await navigator.clipboard.writeText(visibleAccessCode);
+      notify('Código de acesso copiado.');
+    } catch {
+      document.querySelector('#account-access-code')?.select();
+      notify('Código selecionado para copiar.');
+    }
+  },
   async 'check-update'() {
     if (!navigator.onLine) { notify('Conecte-se para verificar atualizações.'); return; }
     await checkForUpdates();
@@ -733,10 +794,12 @@ document.addEventListener('click', async event => {
       creator.showModal();
     } else if (button.dataset.view) {
       view = button.dataset.view;
+      if (button.classList.contains('brand') && !membership()) view = 'welcome';
+      if (view !== 'access') visibleAccessCode = undefined;
       if (view === 'admin' && !membership()?.admin) view = 'circle';
       if (view === 'admin') loadAdministration();
-      if (view === 'circle' && membership()) {
-        refreshMembership().then(() => { if (view === 'circle') render(); }).catch(report);
+      if ((view === 'circle' || view === 'settings') && membership()) {
+        refreshMembership().then(() => { if (view === 'circle' || view === 'settings') render(); }).catch(() => {});
       }
       if (view === 'profile') viewedMember = null;
       render();
@@ -873,10 +936,21 @@ document.addEventListener('submit', async event => {
       newInvite = await issueInvite(values.get('label'));
       await loadAdministration();
       notify('Convite gerado.');
+    } else if (form.id === 'login-form') {
+      const handle = '@' + values.get('handle').trim().replace(/^@/, '').toLowerCase();
+      const account = await login({ handle, accessCode: values.get('accessCode').trim() });
+      await persist(state => Object.assign(state.users[state.currentUserId], {
+        name: account.name, handle: account.handle, bio: account.bio,
+      }));
+      view = 'feed';
+      render();
+      await refreshCircle(true);
     } else if (form.id === 'circle-form') {
       const handle = '@' + values.get('handle').trim().replace(/^@/, '').toLowerCase();
       const joined = await join({ name: values.get('name').trim(), handle, invite: values.get('invite').trim() });
       await persist(state => Object.assign(state.users[state.currentUserId], { name: joined.name, handle: joined.handle }));
+      visibleAccessCode = joined.accessCode;
+      view = visibleAccessCode ? 'access' : 'feed';
       render();
       await refreshCircle(true);
     } else if (form.id === 'profile-form') {
@@ -973,6 +1047,7 @@ install.addEventListener('click', async () => {
 
 try {
   data = await update();
+  if (!membership() && !data.bubbles.length) view = 'welcome';
   render();
   refreshCircle();
   window.addEventListener('online', () => refreshCircle());
