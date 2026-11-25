@@ -190,3 +190,5 @@ dialog{width:min(720px,calc(100% - 28px));max-height:calc(100dvh - 48px);backgro
 .source-notice{display:flex;flex-wrap:wrap;gap:8px 15px;width:min(1320px,100%);margin:auto;padding:12px clamp(20px,5vw,72px) 30px;color:var(--muted);font-size:.875rem}
 .source-notice a{color:var(--plum);text-underline-offset:.15em}
 @media(max-width:690px){.source-notice{padding-bottom:calc(86px + env(safe-area-inset-bottom))}}
+
+.update-notice{width:min(92%,760px);margin:4px auto 12px;padding:10px 16px;border:1px solid var(--line);border-radius:14px;background:var(--white);color:var(--ink)}

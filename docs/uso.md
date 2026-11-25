@@ -17,3 +17,7 @@ Use **Criar** para escrever e salvar no aparelho. Para enviar o texto ao círcul
 Em **Perfil**, edite nome, arroba, bio e foto. Membros veem o nome, a arroba, a bio e as relações de seguir. A foto é local. Em **Configurações**, ajuste tema, movimento e avisos, confira os envios e acesse o guia do app.
 
 Na **Biblioteca** ou em **Configurações**, exporte seu acervo antes de limpar dados do navegador ou trocar de dispositivo. A restauração substitui o acervo local após confirmação. O ZIP guarda os dados do acervo. A sessão do círculo fica no navegador em que o convite foi usado e o ZIP não a recupera.
+
+## Receber atualizações
+
+Com o Expand aberto e online, novas versões são baixadas automaticamente. Se você estiver editando, termine a edição ou feche o modal para aplicar a mudança. O acervo e os rascunhos já salvos continuam no navegador. Se o app estiver fechado ou offline, abra-o quando houver conexão.

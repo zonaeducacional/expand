@@ -28,3 +28,11 @@ chmod 600 ./expand-backup.sqlite
 O script em [ops/backup-dell.sh](../ops/backup-dell.sh) automatiza a cópia via SSH e verifica a integridade do snapshot. Por padrão usa o alias SSH `n4050` e o diretório `/opt/expand`. Você pode passar outro alias e diretório por meio de `EXPAND_SSH_HOST` e `EXPAND_REMOTE_DIR`.
 
 Para restaurar, coloque o snapshot como `expand.sqlite` em um volume novo com acesso de escrita para o usuário 1000 do container. Confirme a integridade, inicialize uma instância isolada com o novo volume e verifique as publicações pelo app antes de apontar o proxy para ela. Guarde o volume anterior até confirmar a recuperação.
+
+## Atualizações da PWA
+
+Publique uma nova versão no servidor com `docker compose up -d --build`. O servidor calcula a versão a partir do código da PWA e da API, incluindo o lockfile. Não é preciso ajustar manualmente o nome do cache. Depois do deploy, `/api/version` informa a versão servida.
+
+Instalações abertas verificam a versão ao iniciar, ao reconectar, ao voltar ao primeiro plano e a cada 30 segundos enquanto estão visíveis. O service worker baixa todos os recursos antes de ativar a atualização. Uma falha no download mantém a versão anterior disponível. O app aplica a versão completa quando a edição ou operação em andamento terminar.
+
+Uma instalação fechada verifica a versão ao ser reaberta. Em **Configurações → Atualizações do app**, existe uma verificação manual. O commit no GitHub fica disponível para implantação a partir do repositório. É o deploy no servidor de cada instância que disponibiliza a nova versão para seus aparelhos.

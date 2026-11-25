@@ -1,6 +1,7 @@
 import { update } from './db.js';
 import { exportArchive, importArchive } from './backup.js?v=14';
 import { adminOverview, createCircle, enqueue, issueInvite, join, memberDirectory, membership, refreshMembership, revokeInvite, saveCircleProfile, setFollowing, synchronize } from './sync.js?v=14';
+import { checkForUpdates, startUpdates } from './updates.js';
 import { followsConversation, unreadFor } from './conversations.js?v=14';
 
 const main = document.querySelector('main');
@@ -23,6 +24,8 @@ let filter = '';
 let notice;
 let installPrompt;
 let syncSummary = '';
+let activeOperations = 0;
+let pendingWrites = 0;
 
 function notify(message) {
   status.textContent = message;
@@ -35,7 +38,9 @@ function author(id) {
 }
 
 async function persist(change) {
-  data = await update(state => { change(state); return state; });
+  pendingWrites += 1;
+  try { data = await update(state => { change(state); return state; }); }
+  finally { pendingWrites -= 1; }
 }
 
 let people = [];
@@ -346,6 +351,11 @@ function settings() {
       </div>
       <p class="muted">O ZIP guarda seus textos e anexos locais. Restaurar substitui o acervo deste navegador depois da sua confirmação.</p>
     </section>
+    <section class="panel" aria-labelledby="settings-update">
+      <h2 id="settings-update">Atualizações do app</h2>
+      <p id="settings-update-status" class="muted" role="status">O Expand verifica atualizações quando está aberto e conectado.</p>
+      <button class="quiet" data-action="check-update">Verificar atualização</button>
+    </section>
     <section class="panel" aria-labelledby="settings-guide">
       <h2 id="settings-guide">Como usar o Expand</h2>
       <details><summary>Entrar e instalar</summary><p>Abra Círculo Expand e cole o convite. Cada código vale por 24 horas e pode ser usado uma vez. No iPhone, abra o site no Safari, toque em Compartilhar e escolha Adicionar à Tela de Início. No Android ou no computador, procure Instalar app no menu do navegador.</p>
@@ -530,6 +540,11 @@ async function prepareMedia(file, kind) {
 let pendingFiles = 0;
 const actions = {
   'install-app'() { install.click(); },
+  async 'check-update'() {
+    if (!navigator.onLine) { notify('Conecte-se para verificar atualizações.'); return; }
+    await checkForUpdates();
+    notify('Verificação de atualização concluída.');
+  },
   'admin-refresh'() { return loadAdministration(); },
   async 'copy-invite'() {
     if (!newInvite) return;
@@ -708,13 +723,16 @@ document.addEventListener('click', async event => {
       main.focus({ preventScroll: true });
       window.scrollTo(0, 0);
     } else if (Object.hasOwn(actions, button.dataset.action)) {
-      await actions[button.dataset.action](button);
+      activeOperations += 1;
+      try { await actions[button.dataset.action](button); }
+      finally { activeOperations -= 1; }
     }
   } catch (error) { report(error); }
 });
 
 document.addEventListener('input', async event => {
   const field = event.target;
+  if (field.form && field.type !== 'file') field.form.dataset.modified = '';
   if (!field.form?.matches('#bubble-form, #echo-form') || !field.name || field.type === 'file') return;
   const label = field.form.querySelector('#draft-state');
   const value = field.value;
@@ -747,6 +765,7 @@ document.addEventListener('change', async event => {
     return;
   }
   if (field.form?.id === 'profile-form' && field.name === 'avatar' && field.files[0]) {
+    activeOperations += 1;
     try {
       const image = await prepareCover(field.files[0], 320);
       await persist(state => { state.users[state.currentUserId].avatar = image; });
@@ -757,7 +776,7 @@ document.addEventListener('change', async event => {
       }
       notify('Foto salva neste dispositivo.');
     } catch (error) { report(error); }
-    finally { field.value = ''; }
+    finally { field.value = ''; activeOperations -= 1; }
     return;
   }
   if (!field.form?.matches('#bubble-form') || field.type !== 'file' || !field.files[0]) return;
@@ -793,6 +812,7 @@ document.addEventListener('submit', async event => {
   const values = new FormData(form);
   const submit = form.querySelector('[type=submit], button:not([type])');
   submit.disabled = true;
+  activeOperations += 1;
   try {
     if (form.id === 'create-circle-form') {
       await createCircle({ name: values.get('name').trim(), description: values.get('description').trim() });
@@ -864,14 +884,16 @@ document.addEventListener('submit', async event => {
       await refreshCircle();
       if (selected === id && dialog.open && !layer.querySelector('textarea')?.value) layerView();
     }
+    delete form.dataset.modified;
   } catch (error) { report(error); }
-  finally { submit.disabled = false; }
+  finally { submit.disabled = false; activeOperations -= 1; }
 });
 
 importInput.addEventListener('change', async () => {
   const file = importInput.files[0];
   importInput.value = '';
   if (!file) return;
+  activeOperations += 1;
   try {
     const restored = await importArchive(file);
     if (!window.confirm('Restaurar este backup e substituir o acervo deste dispositivo?')) return;
@@ -880,6 +902,7 @@ importInput.addEventListener('change', async () => {
     render();
     notify('Acervo restaurado.');
   } catch (error) { report(error); }
+  finally { activeOperations -= 1; }
 });
 
 window.addEventListener('beforeinstallprompt', event => {
@@ -906,9 +929,5 @@ try {
   report(error);
 }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(error => {
-    console.error(error);
-    notify('O modo offline ainda não está disponível.');
-  });
-}
+startUpdates(() => !creator.open && !dialog.open && pendingFiles === 0 &&
+  pendingWrites === 0 && activeOperations === 0 && !main.querySelector('form[data-modified]'));

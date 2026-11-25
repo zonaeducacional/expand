@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import staticFiles from '@fastify/static';
 import { fileURLToPath } from 'node:url';
+import { release, releaseHtml, releaseWorker } from './release.js';
 import { db, hash, secret, now, memberId, transaction, createInvite } from './store.js';
 
 const app = Fastify({ logger: true, bodyLimit: 64 * 1024 });
@@ -188,9 +189,26 @@ app.post('/api/sync', async (request, reply) => {
   });
 });
 
+app.addHook('onRequest', async (request, reply) => {
+  const expected = request.query?.['expand-release'];
+  if (expected && expected !== release) {
+    return reply.header('Cache-Control', 'no-store').code(409).send({ error: 'A versão em publicação mudou.' });
+  }
+});
+
+app.get('/api/version', async (_request, reply) =>
+  reply.header('Cache-Control', 'no-store').send({ release }));
+
+for (const path of ['/', '/index.html']) {
+  app.get(path, async (_request, reply) =>
+    reply.header('Cache-Control', 'no-store').type('text/html; charset=utf-8').send(releaseHtml));
+}
+app.get('/sw.js', async (_request, reply) =>
+  reply.header('Cache-Control', 'no-store').type('application/javascript; charset=utf-8').send(releaseWorker));
+
 await app.register(staticFiles, {
   root: fileURLToPath(new URL('../dist/', import.meta.url)),
   cacheControl: false,
-  setHeaders(response) { response.setHeader('Cache-Control', 'no-cache'); },
+  setHeaders(response) { response.setHeader('Cache-Control', 'no-store'); },
 });
 await app.listen({ host: '0.0.0.0', port: 3060 });
