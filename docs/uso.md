@@ -4,9 +4,19 @@
 
 Abra o endereço do Expand e toque em **Círculo Expand**. Cole o convite e escolha seu nome e sua arroba. Cada código permite uma entrada e expira em 24 horas. No iPhone, procure **Adicionar à Tela de Início** no menu Compartilhar do Safari. No Android ou no computador, procure **Instalar app** no navegador.
 
-## Da Bolha ao Eco e ao Ensaio
+## Bolha, Círculo, Eco e Expansão
 
-Uma bolha começa com uma pergunta. Toque em **Expandir** para ler as contribuições. Ao escrever um Eco, escolha uma lente que indique como você quer contribuir. **Ler ensaio** abre o texto mais longo. Você pode salvar a bolha na Biblioteca ou acompanhar a conversa. **Novos Ecos** reúne os avisos que chegaram após a sincronização.
+Uma **Bolha** é uma conversa que começa com uma pergunta. Toque em **Expandir** para ler os Ecos e em **Ler ensaio** para aprofundar a leitura quando houver um texto mais longo.
+
+Um **Círculo** é o grupo privado que recebe as bolhas compartilhadas nele. Cada círculo pode reunir várias conversas. Os membros entram por convite e podem ler as publicações e escrever Ecos.
+
+Um **Eco** é uma contribuição à conversa. A lente indica como você está contribuindo, por exemplo com uma vivência ou com uma referência. A expansão acontece quando os Ecos acrescentam contexto e perspectivas à pergunta.
+
+## Como aproveitar melhor o Expand
+
+1. Escolha uma pergunta que importe para você. Leia as contribuições anteriores e o ensaio, quando houver.
+2. Acrescente algo concreto. Numa bolha sobre soberania digital, conte como você recuperou suas fotos depois de perder acesso a uma conta e o que faria hoje para preservar essas lembranças.
+3. Use **Acompanhar conversa** para receber avisos em **Novos Ecos**. Use **Salvar** para reencontrar a bolha na Biblioteca.
 
 ## Criar, salvar e publicar
 

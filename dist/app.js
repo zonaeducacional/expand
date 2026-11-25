@@ -358,9 +358,21 @@ function settings() {
     </section>
     <section class="panel" aria-labelledby="settings-guide">
       <h2 id="settings-guide">Como usar o Expand</h2>
+      <details><summary>O que é uma bolha?</summary>
+        <p>Uma bolha é uma conversa em torno de uma pergunta. A entrada apresenta o tema. Em <strong>Expandir</strong>, você encontra os Ecos da conversa. Em <strong>Ler ensaio</strong>, encontra o texto mais longo, quando o autor o incluiu.</p>
+        <p>Para criar uma, comece com uma pergunta aberta e específica. Você pode acrescentar um ensaio para dar contexto e salvar a bolha no aparelho até decidir publicar.</p></details>
+      <details><summary>O que é um círculo?</summary>
+        <p>Um círculo é o grupo privado de pessoas que podem ler e responder às bolhas publicadas ali. Cada círculo pode reunir várias conversas. Na versão atual, entra-se por convite. Ao tocar em <strong>Publicar texto no círculo</strong>, você compartilha o texto com os membros.</p></details>
+      <details><summary>O que são Eco, lente e expansão?</summary>
+        <p>Um <strong>Eco</strong> é sua contribuição à conversa. A <strong>lente</strong> indica como você contribui. Use <strong>Vivência</strong> para contar algo que aconteceu com você ou <strong>Referência</strong> para indicar uma leitura relevante. A <strong>expansão</strong> acontece quando a conversa ganha perspectivas e permite voltar à pergunta com mais contexto.</p></details>
+      <details><summary>Como aproveitar melhor o Expand?</summary>
+        <ol>
+          <li><strong>Escolha uma pergunta que importe para você.</strong> Abra a bolha, leia os Ecos e, se houver, o ensaio antes de responder.</li>
+          <li><strong>Acrescente algo concreto.</strong> Numa bolha sobre soberania digital, por exemplo, conte como você recuperou suas fotos depois de perder acesso a uma conta e o que faria hoje para preservar essas lembranças.</li>
+          <li><strong>Volte quando a conversa crescer.</strong> Use <strong>Acompanhar conversa</strong> para receber avisos em <strong>Novos Ecos</strong>. Use <strong>Salvar</strong> para encontrar a bolha depois na Biblioteca.</li>
+        </ol></details>
       <details><summary>Entrar e instalar</summary><p>Abra Círculo Expand e cole o convite. Cada código vale por 24 horas e pode ser usado uma vez. No iPhone, abra o site no Safari, toque em Compartilhar e escolha Adicionar à Tela de Início. No Android ou no computador, procure Instalar app no menu do navegador.</p>
       ${installAvailable ? '<button class="quiet" data-action="install-app">Instalar Expand</button>' : ''}</details>
-      <details><summary>Da bolha ao Eco e ao ensaio</summary><p>Uma bolha começa com uma pergunta. Toque em Expandir para ler os Ecos e escrever o seu. A lente indica como você contribui, por exemplo com uma vivência ou referência. Toque em Ler ensaio para aprofundar a questão.</p></details>
       <details><summary>Escrever offline e publicar</summary><p>Use Criar para salvar uma bolha no aparelho. Depois abra Expandir e escolha Publicar texto no círculo. Se estiver offline, o texto fica na fila. Na próxima conexão, mantenha o app aberto até o envio ser confirmado.</p></details>
       <details><summary>Quem vê cada coisa</summary><p>Rascunhos, leituras salvas e as mídias que você adiciona ficam no aparelho. O Dell guarda os textos publicados, o perfil compartilhado, relações de seguir e permissões do círculo. Imagens, avatares, áudios e vídeos ainda ficam disponíveis apenas no aparelho em que foram adicionados. O Expand funciona sem GPS.</p></details>
       <details><summary>Trocar de aparelho ou recuperar dados</summary><p>Exporte o ZIP antes de trocar de aparelho ou limpar os dados do site. Na outra instalação, use Restaurar acervo. O ZIP leva o acervo pessoal. Para recuperar o acesso ao círculo em outro navegador, fale com o administrador. Nesta versão, a sessão permanece no aparelho que usou o convite.</p></details>
