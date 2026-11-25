@@ -2,7 +2,7 @@ const release = '__EXPAND_RELEASE__';
 const packaged = /^[a-f0-9]{20}$/.test(release);
 const cacheName = 'expand-shell-' + (packaged ? release : 'preview-16');
 const shell = [
-  './', './index.html', './style.css?v=16', './theme.js?v=14', './sync.js?v=18', './app.js?v=18',
+  './', './index.html', './style.css?v=16', './theme.js?v=14', './sync.js?v=18', './app.js?v=19',
   './updates.js', './conversations.js?v=14', './db.js', './seed.js', './backup.js?v=14',
   './manifest.webmanifest', './assets/icon-192.png', './assets/icon-512.png',
   './assets/fraunces.ttf', './assets/instrument.ttf', './assets/fflate.js',

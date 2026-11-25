@@ -275,6 +275,7 @@ function feed() {
     <button class="primary" data-view="create">Criar primeira bolha</button>
   </section>`;
   const saved = data.saved.includes(bubble.id);
+  const echoTotal = bubble.echoes.length;
   return heading + `
     <article class="hero">
       <div class="art">
@@ -285,7 +286,7 @@ function feed() {
       <div class="hero-copy">
         <p class="eyebrow">${escape(bubble.theme)}</p>
         <h2>${escape(bubble.prompt)}</h2>
-        <p class="by">${identity(bubble.authorId)} · ${bubble.echoes.length} ${bubble.echoes.length === 1 ? 'Eco' : 'Ecos'}${bubble.shared ? ' · Círculo' : ''}</p>
+        <p class="by">${identity(bubble.authorId)}${echoTotal ? ` · ${echoTotal} ${echoTotal === 1 ? 'Eco' : 'Ecos'}` : ''}</p>
         <div class="actions">
           <button class="primary" data-action="expand" data-id="${escape(bubble.id)}">Expandir</button>
           ${unreadFor(data, bubble.id).length ? `<span class="badge unread-badge">${echoCount(unreadFor(data, bubble.id).length)}</span>` : ''}
@@ -457,7 +458,7 @@ function layerView() {
     <div class="layer-body">
       <p class="eyebrow">${essay ? 'Ensaio' : 'Ecos'} · ${escape(bubble.theme)}</p>
       <h2 id="layer-title">${escape(bubble.prompt)}</h2>
-      <p class="muted">${identity(bubble.authorId)}</p>
+      ${essay ? `<p class="muted">${identity(bubble.authorId)}</p>` : ''}
       ${membership()?.circle && bubble.authorId === data.currentUserId && !bubble.shared && !data.outbox?.some(item => item.id === bubble.id)
         ? '<div class="actions toolbar"><button class="quiet" data-action="publish">Publicar texto no círculo</button></div>' : ''}
       ${circleStatus(bubble.id)}
