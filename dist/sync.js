@@ -77,7 +77,7 @@ export function enqueue(state, operation) {
 
 function apply(state, change, memberId) {
   const { id, kind, parent, content, authorId, name, handle } = change;
-  state.users[authorId] = { id: authorId, name, handle };
+  state.users[authorId] = { ...state.users[authorId], id: authorId, name, handle };
   if (kind === 'bubble') {
     const bubble = state.bubbles.find(item => item.id === id);
     if (bubble) bubble.shared = true;
@@ -95,7 +95,8 @@ function apply(state, change, memberId) {
 }
 
 async function run() {
-  const token = session.token;
+  const sessionAtStart = session;
+  const token = sessionAtStart.token;
   let state = await update();
   let changed = false;
   for (const operation of state.outbox ?? []) {
@@ -121,17 +122,38 @@ async function run() {
   }
   let cursor = state.circleCursor ?? 0;
   let more;
+  let firstPage = true;
   do {
-    const result = await request('sync?cursor=' + cursor, { token });
-    if (result.items.length) {
+    const result = await request('sync?cursor=' + cursor + (firstPage ? '&profiles=1' : ''), { token });
+    firstPage = false;
+    const profiles = (result.profiles ?? []).filter(profile =>
+      profile.id !== sessionAtStart.id || session === sessionAtStart);
+    const differs = (current, profile) => current?.name !== profile.name ||
+      current?.handle !== profile.handle || (current?.bio ?? '') !== profile.bio;
+    const ownProfile = profiles.find(profile => profile.id === sessionAtStart.id);
+    const profilesChanged = profiles.some(profile => differs(state.users[profile.id], profile)) ||
+      ownProfile && differs(state.users[state.currentUserId], ownProfile);
+    if (result.items.length || profilesChanged) {
       state = await update(data => {
         for (const change of result.items) {
-          if (change.seq > (data.circleCursor ?? 0)) apply(data, change, session.id);
+          if (change.seq > (data.circleCursor ?? 0)) apply(data, change, sessionAtStart.id);
+        }
+        for (const profile of profiles) {
+          if (profile.id === sessionAtStart.id && session !== sessionAtStart) continue;
+          data.users[profile.id] = { ...data.users[profile.id], ...profile };
+          if (profile.id === sessionAtStart.id) {
+            const local = data.users[data.currentUserId];
+            Object.assign(local, { name: profile.name, handle: profile.handle, bio: profile.bio });
+          }
         }
         data.circleCursor = Math.max(data.circleCursor ?? 0, result.cursor);
         return data;
       });
       changed = true;
+    }
+    if (ownProfile && session === sessionAtStart && differs(session, ownProfile)) {
+      session = { ...session, ...ownProfile };
+      localStorage.setItem(key, JSON.stringify(session));
     }
     cursor = result.cursor;
     more = result.more;

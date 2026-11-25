@@ -65,6 +65,8 @@ const overview = db.prepare(`SELECT
   (SELECT count(DISTINCT member) FROM changes) AS authors,
   (SELECT count(*) FROM follows) AS follows,
   (SELECT count(*) FROM invites WHERE expires >= ?) AS activeInvites`);
+const publicProfiles = db.prepare(`SELECT m.id,m.name,m.handle,coalesce(b.bio,'') AS bio
+  FROM members m LEFT JOIN member_bios b ON b.member=m.id`);
 const recentInvites = db.prepare(`SELECT id,label,created,expires,used,revoked
   FROM invite_history WHERE admin=0 ORDER BY created DESC, rowid DESC LIMIT 30`);
 
@@ -152,7 +154,8 @@ app.get('/api/sync', async (request, reply) => {
   if (!Number.isSafeInteger(cursor) || cursor < 0) return replyError(reply, 400, 'Cursor inválido.');
   const rows = statements.pull.all(cursor);
   const items = rows.slice(0, 100).map(row => ({ ...row, content: JSON.parse(row.content) }));
-  return { items, cursor: items.at(-1)?.seq ?? cursor, more: rows.length > 100 };
+  return { items, cursor: items.at(-1)?.seq ?? cursor, more: rows.length > 100,
+    ...(request.query.profiles === '1' ? { profiles: publicProfiles.all() } : {}) };
 });
 
 app.post('/api/sync', async (request, reply) => {

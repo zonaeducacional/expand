@@ -1,6 +1,6 @@
 import { update } from './db.js';
 import { exportArchive, importArchive } from './backup.js?v=14';
-import { adminOverview, createCircle, enqueue, issueInvite, join, memberDirectory, membership, refreshMembership, revokeInvite, saveCircleProfile, setFollowing, synchronize } from './sync.js?v=14';
+import { adminOverview, createCircle, enqueue, issueInvite, join, memberDirectory, membership, refreshMembership, revokeInvite, saveCircleProfile, setFollowing, synchronize } from './sync.js?v=18';
 import { checkForUpdates, startUpdates } from './updates.js';
 import { followsConversation, unreadFor } from './conversations.js?v=14';
 
@@ -852,7 +852,10 @@ document.addEventListener('submit', async event => {
         const duplicate = Object.values(state.users).some(user =>
           user.id !== state.currentUserId && user.handle?.toLowerCase() === '@' + handle);
         if (duplicate && !membership()) throw new Error('Esta arroba já existe neste acervo.');
-        Object.assign(state.users[state.currentUserId], { name, handle: '@' + handle, bio });
+        const profile = { name, handle: '@' + handle, bio };
+        Object.assign(state.users[state.currentUserId], profile);
+        const id = membership()?.id;
+        if (id) state.users[id] = { ...state.users[id], ...profile, id };
       });
       render();
       notify('Perfil salvo neste dispositivo.');
