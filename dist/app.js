@@ -1,3 +1,4 @@
+import { policies } from './policies.js';
 import { update } from './db.js';
 import { exportArchive, importArchive } from './backup.js?v=14';
 import { adminOverview, createCircle, enqueue, issueInvite, join, memberDirectory, membership, refreshMembership, revokeInvite, saveCircleProfile, setFollowing, synchronize } from './sync.js?v=18';
@@ -378,6 +379,7 @@ function settings() {
       <details><summary>Quem vê cada coisa</summary><p>Rascunhos, leituras salvas e as mídias que você adiciona ficam no aparelho. O Dell guarda os textos publicados, o perfil compartilhado, relações de seguir e permissões do círculo. Imagens, avatares, áudios e vídeos ainda ficam disponíveis apenas no aparelho em que foram adicionados. O Expand funciona sem GPS.</p></details>
       <details><summary>Trocar de aparelho ou recuperar dados</summary><p>Exporte o ZIP antes de trocar de aparelho ou limpar os dados do site. Na outra instalação, use Restaurar acervo. O ZIP leva o acervo pessoal. Para recuperar o acesso ao círculo em outro navegador, fale com o administrador. Nesta versão, a sessão permanece no aparelho que usou o convite.</p></details>
     </section>
+    ${policies}
   </section>`;
 }
 

@@ -196,3 +196,6 @@ dialog{width:min(720px,calc(100% - 28px));max-height:calc(100dvh - 48px);backgro
 .edit-cover{margin-block:16px}
 .edit-cover summary{cursor:pointer;font-weight:700}
 .edit-cover label{margin-block:12px 6px}
+
+.settings-page details li{line-height:1.55;margin-block:6px}
+.settings-page details a{color:var(--plum);text-underline-offset:.15em}

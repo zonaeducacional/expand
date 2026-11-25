@@ -31,3 +31,7 @@ Na **Biblioteca** ou em **Configurações**, exporte seu acervo antes de limpar 
 ## Receber atualizações
 
 Com o Expand aberto e online, novas versões são baixadas automaticamente. Se você estiver editando, termine a edição ou feche o modal para aplicar a mudança. O acervo e os rascunhos já salvos continuam no navegador. Se o app estiver fechado ou offline, abra-o quando houver conexão.
+
+## Comunidade, privacidade e licença
+
+Em **Configurações → Comunidade, privacidade e licença**, consulte as diretrizes do círculo, os termos desta instância, a política de privacidade e os links para o código aberto. Para questões sobre comportamento ou dados pessoais, procure a administração em particular pelo canal do convite.
